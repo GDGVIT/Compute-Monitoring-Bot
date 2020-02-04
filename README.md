@@ -1,7 +1,7 @@
 <p align="center">
 	<img src="https://user-images.githubusercontent.com/30529572/72455010-fb38d400-37e7-11ea-9c1e-8cdeb5f5906e.png" />
-	<h2 align="center"> < Insert Project Title Here > </h2>
-	<h4 align="center"> < Insert Project Description Here > <h4>
+	<h2 align="center"> Compute-Monitoring-Bot </h2>
+	<h4 align="center"> A Bot To Monitor all Your Hosted VMs <h4>
 </p>
 
 ---
@@ -10,7 +10,7 @@
 
 
 ## Functionalities
-- [ ]  < insert functionality >
+- [ ]  Telegram Bot
 - [ ]  < insert functionality >
 - [ ]  < insert functionality >
 - [ ]  < insert functionality >
