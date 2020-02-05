@@ -10,38 +10,21 @@
 
 
 ## Functionalities
-- [ ]  Telegram Bot
-- [ ]  < insert functionality >
-- [ ]  < insert functionality >
-- [ ]  < insert functionality >
-
+- [ ]  Realtime VM Monitoring
+- [ ]  Useful for all Types of VM's
+- [ ]  Schedules updates about current VM usage
 <br>
 
-
-## Instructions to run
-
-* Pre-requisites:
-	-  < insert pre-requisite >
-	-  < insert pre-requisite >
-
-* < directions to install > 
-```bash
-< insert code >
-```
-
-* < directions to execute >
-
-```bash
-< insert code >
-```
-
-<br>
+## Proposed Work Break Down Structure
+- [ ]  Creating a telegram bot initially
+- [ ]  Making the bot call a 3rd party api that fetches the live statistics from a VM
+- [ ]  Automating it to get the stats at regular intervals
 
 ## Contributors
 
-* [ < INSERT NAME HERE > ](INSERT_PROFILE_URL_HERE)
-* [ < INSERT NAME HERE > ](INSERT_PROFILE_URL_HERE)
-
+* [ Abhishek Kushwaha ](https://github.com/abhishekkushwaha4u)
+* [ Angad Sharma ](https://github.com/L04DB4L4NC3R)
+* [ Ubaid Usmani ](https://github.com/Geek-ubaid)
 
 
 <br>
