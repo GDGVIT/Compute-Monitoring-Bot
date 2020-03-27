@@ -1,1 +1,1 @@
-python compute_bot.py
+worker: python compute_bot.py
