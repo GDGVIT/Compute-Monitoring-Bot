@@ -6,7 +6,11 @@ import sys
 from telegram.ext import Updater, CommandHandler
 
 
-from getting_compute_data import getting_netdata_data, plotting_cpu_vs_time
+from getting_compute_data import (
+    getting_netdata_data, 
+    plotting_cpu_vs_time,
+    plotting_ram_graph
+)
 
 from dotenv import load_dotenv
 from pathlib import Path
@@ -44,7 +48,7 @@ Currently, I can monitor your cpu, ram, i/o read-write speed\n
 
 Currently, I only support following outputs,\n 
 1) cpu load- /cpu,\n
-2) 
+2) ram usage - /ram \n
 """
 
 
@@ -52,9 +56,11 @@ def start(update, context):
         context.bot.send_message(chat_id=update.effective_chat.id, text=intro_text)
         
 
-def cpu_graph(update, context):
+def cpu_usage(update, context):
     context.bot.send_photo(chat_id=update.effective_chat.id, photo=plotting_cpu_vs_time())
 
+def ram_usage(update, context):
+    context.bot.send_photo(chat_id=update.effective_chat.id, photo=plotting_ram_graph())
 
 
 if __name__=='__main__':
@@ -63,6 +69,7 @@ if __name__=='__main__':
     dispatcher = updater.dispatcher
 
     updater.dispatcher.add_handler(CommandHandler("start", start))
-    updater.dispatcher.add_handler(CommandHandler("cpu", cpu_graph))
+    updater.dispatcher.add_handler(CommandHandler("cpu", cpu_usage))
+    updater.dispatcher.add_handler(CommandHandler("ram", ram_usage))
 
     run(updater)
