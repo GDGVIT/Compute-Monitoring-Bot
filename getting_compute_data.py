@@ -1,5 +1,4 @@
 import requests
-import matplotlib.pyplot as plt 
 from datetime import datetime
 from io import BytesIO
 import json
@@ -16,6 +15,7 @@ def getting_netdata_data(url=url):
     return data
 
 def plotting_cpu_vs_time(url=url):
+    import matplotlib.pyplot as plt
     data = getting_netdata_data(url)
     time = []
     cpu = []
@@ -33,7 +33,7 @@ def plotting_cpu_vs_time(url=url):
     return buffer
 
 
-def plotting_ram_graph(url=url):
+def preparing_ram_graph_data(url=url):
     data = getting_netdata_data(url_ram)
     time = []
     free_ram = []
@@ -48,16 +48,24 @@ def plotting_ram_graph(url=url):
         used_ram.append(i[2])
         cached_ram.append(i[3])
         buffers_ram.append(i[4])
-        
-    plt.xlabel('time')
-    plt.plot(time, free_ram, 'Free Ram')
-    plt.plot(time, used_ram, 'Used Ram')
-    plt.plot(time, cached_ram, 'Cached Ram')
-    plt.plot(time, buffers_ram, 'Buffer Ram')
     
+    return {
+        'free_ram': free_ram,
+        'used_ram': used_ram,
+        'cached_ram': cached_ram,
+        'buffers_ram': buffers_ram,
+        'time': time
+    }  
+
+
+def plotting_and_returning_image(x_object, y_object, x_label, y_label):
+    import matplotlib.pyplot as plt
+    plt.xlabel(x_label) 
+    plt.ylabel(y_label) 
+    plt.title('{} v/s {}'.format(y_label, x_label))
     
     buffer = BytesIO()
+    plt.plot(x_object, y_object)
     plt.savefig(buffer, format='png')
     buffer.seek(0)
     return buffer
-

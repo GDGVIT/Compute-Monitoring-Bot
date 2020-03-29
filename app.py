@@ -9,7 +9,9 @@ from telegram.ext import Updater, CommandHandler
 from getting_compute_data import (
     getting_netdata_data, 
     plotting_cpu_vs_time,
-    plotting_ram_graph
+    plotting_and_returning_image,
+    preparing_ram_graph_data
+    
 )
 
 from dotenv import load_dotenv
@@ -53,14 +55,34 @@ Currently, I only support following outputs,\n
 
 
 def start(update, context):
-        context.bot.send_message(chat_id=update.effective_chat.id, text=intro_text)
+    context.bot.send_message(chat_id=update.effective_chat.id, text=intro_text)
         
 
 def cpu_usage(update, context):
     context.bot.send_photo(chat_id=update.effective_chat.id, photo=plotting_cpu_vs_time())
 
 def ram_usage(update, context):
-    context.bot.send_photo(chat_id=update.effective_chat.id, photo=plotting_ram_graph())
+    context.bot.send_message(chat_id=update.effective_chat.id, text='The following is an analysis of ram usage\n')
+    data = preparing_ram_graph_data()
+    
+    free_ram = plotting_and_returning_image(data['time'], data['free_ram'], 'free_ram', 'time')
+    context.bot.send_photo(chat_id=update.effective_chat.id, photo=free_ram)
+    context.bot.send_message(chat_id=update.effective_chat.id, text='Free Ram Usage\n')
+    
+    used_ram = plotting_and_returning_image(data['time'], data['used_ram'], 'used_ram', 'time')
+    context.bot.send_photo(chat_id=update.effective_chat.id, photo=used_ram)
+    context.bot.send_message(chat_id=update.effective_chat.id, text='Used Ram Usage\n')
+    
+    cached_ram = plotting_and_returning_image(data['time'], data['cached_ram'], 'cached_ram', 'time')
+    context.bot.send_photo(chat_id=update.effective_chat.id, photo=cached_ram)
+    context.bot.send_message(chat_id=update.effective_chat.id, text='Cached Ram Usage\n')
+    
+    buffers_ram = plotting_and_returning_image(data['time'], data['buffers_ram'], 'buffers_ram', 'time')
+    context.bot.send_photo(chat_id=update.effective_chat.id, photo=buffers_ram)
+    context.bot.send_message(chat_id=update.effective_chat.id, text='Buffer Ram Usage\n')
+    
+
+    
 
 
 if __name__=='__main__':
