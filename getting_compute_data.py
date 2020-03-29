@@ -3,6 +3,8 @@ from datetime import datetime
 from io import BytesIO
 import json
 
+import matplotlib.pyplot as plt
+
 def unix_to_datetime(time):
     return datetime.utcfromtimestamp(int(time)).strftime('%Y-%m-%d %H:%M:%S')
 
@@ -15,7 +17,7 @@ def getting_netdata_data(url=url):
     return data
 
 def plotting_cpu_vs_time(url=url):
-    import matplotlib.pyplot as plt
+    plt.clf()
     data = getting_netdata_data(url)
     time = []
     cpu = []
@@ -58,8 +60,8 @@ def preparing_ram_graph_data(url=url):
     }  
 
 
-def plotting_and_returning_image(x_object, y_object, x_label, y_label):
-    import matplotlib.pyplot as plt
+def plotting_and_returning_image(x_object, y_object, y_label, x_label):
+    plt.clf()
     plt.xlabel(x_label) 
     plt.ylabel(y_label) 
     plt.title('{} v/s {}'.format(y_label, x_label))

@@ -65,19 +65,19 @@ def ram_usage(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text='The following is an analysis of ram usage\n')
     data = preparing_ram_graph_data()
     
-    free_ram = plotting_and_returning_image(data['time'], data['free_ram'], 'free_ram', 'time')
+    free_ram = plotting_and_returning_image(data['time'], data['free_ram'], 'Free Ram', 'time')
     context.bot.send_photo(chat_id=update.effective_chat.id, photo=free_ram)
     context.bot.send_message(chat_id=update.effective_chat.id, text='Free Ram Usage\n')
     
-    used_ram = plotting_and_returning_image(data['time'], data['used_ram'], 'used_ram', 'time')
+    used_ram = plotting_and_returning_image(data['time'], data['used_ram'], 'Used Ram', 'time')
     context.bot.send_photo(chat_id=update.effective_chat.id, photo=used_ram)
     context.bot.send_message(chat_id=update.effective_chat.id, text='Used Ram Usage\n')
     
-    cached_ram = plotting_and_returning_image(data['time'], data['cached_ram'], 'cached_ram', 'time')
+    cached_ram = plotting_and_returning_image(data['time'], data['cached_ram'], 'Cached Ram', 'time')
     context.bot.send_photo(chat_id=update.effective_chat.id, photo=cached_ram)
     context.bot.send_message(chat_id=update.effective_chat.id, text='Cached Ram Usage\n')
     
-    buffers_ram = plotting_and_returning_image(data['time'], data['buffers_ram'], 'buffers_ram', 'time')
+    buffers_ram = plotting_and_returning_image(data['time'], data['buffers_ram'], 'Buffer Ram', 'time')
     context.bot.send_photo(chat_id=update.effective_chat.id, photo=buffers_ram)
     context.bot.send_message(chat_id=update.effective_chat.id, text='Buffer Ram Usage\n')
     
