@@ -1,0 +1,12 @@
+import paramiko
+k = paramiko.RSAKey.from_private_key_file("new-mayank-3.pem")
+c = paramiko.SSHClient()
+c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+print("connecting")
+c.connect( hostname = "13.233.233.19", username = "ubuntu", pkey = k )
+print( "connected")
+stdin , stdout, stderr = c.exec_command("uname -a")
+print( stdout.read())
+print( "Errors")
+print( stderr.read())
+c.close()
