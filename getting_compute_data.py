@@ -3,7 +3,12 @@ from datetime import datetime
 from io import BytesIO
 import json
 
+from ssh_into_server import ssh_into_server
+
 import matplotlib.pyplot as plt
+
+command = "curl https://london.my-netdata.io/api/v1/data\?chart\=system.cpu\&after\=-600\&points\=20\&group\=average\&format\=json\&options\=seconds\&options\=jsonwrapServer%20response "
+
 
 def unix_to_datetime(time):
     return datetime.utcfromtimestamp(int(time)).strftime('%Y-%m-%d %H:%M:%S')
@@ -18,7 +23,7 @@ def getting_netdata_data(url=url):
 
 def plotting_cpu_vs_time(url=url):
     plt.clf()
-    data = getting_netdata_data(url)
+    data = ssh_into_server('192.168.43.34','noob4u', 'abhi24783589', str(command))
     time = []
     cpu = []
     plt.xlabel('time') 
@@ -36,7 +41,7 @@ def plotting_cpu_vs_time(url=url):
 
 
 def preparing_ram_graph_data(url=url):
-    data = getting_netdata_data(url_ram)
+    data = ssh_into_server('192.168.43.34','noob4u', 'abhi24783589', str(command))
     time = []
     free_ram = []
     used_ram = []
@@ -71,3 +76,6 @@ def plotting_and_returning_image(x_object, y_object, y_label, x_label):
     plt.savefig(buffer, format='png')
     buffer.seek(0)
     return buffer
+
+
+
