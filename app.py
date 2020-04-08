@@ -68,9 +68,9 @@ Please enter the following info in order to let us monitor you
 def start(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text=intro_text)
         
-def host_enter(update, context):
-    update.message.reply_text("Enter host")
-    host = update.message.text
+# def host_enter(update, context):
+#     update.message.reply_text("Enter host")
+#     host = update.message.text
     # update.message.reply_text("Enter username")
     # username = update.message.text
     # update.message.reply_text("Enter password")
@@ -135,7 +135,6 @@ def facts_to_str(user_data):
     facts = list()
 
     for key, value in user_data.items():
-        print(user_data)
         facts.append('{} - {}'.format(key, value))
     return "\n".join(facts).join(['\n', '\n'])
 
