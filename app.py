@@ -51,7 +51,9 @@ Currently, I can monitor your cpu, ram, i/o read-write speed\n
 Currently, I only support following outputs,\n 
 1) cpu load- /cpu,\n
 2) ram usage - /ram \n
-3) change credentials - /enterDetails \n
+3) enter/change credentials - /enterDetails \n
+
+Btw, I don't save credentials, so make sure to set your credentials before using 1 and 2
 """
 
 extra = """
