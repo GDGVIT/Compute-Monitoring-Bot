@@ -5,9 +5,9 @@ import json
 def ssh_into_server(hostname, username, password, cmd_to_execute):
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    print("connecting")
+    print("Connecting to client")
     c.connect( hostname = hostname, username = username, password=password)
-    print( "connected")
+    print( "Connected to Client")
     stdin , stdout, stderr = c.exec_command(cmd_to_execute)
     output = stdout.readlines()
     output = ' '.join(output)
@@ -22,4 +22,3 @@ def ssh_into_server(hostname, username, password, cmd_to_execute):
 
 command = "curl http://localhost:19999/api/v1/data\?chart\=system.ram\&after\=-600\&points\=20\&group\=average\&format\=json\&options\=seconds\&options\=jsonwrapServer%20response "
 
-ssh_into_server('192.168.43.34','noob4u', 'abhi24783589', str(command))
