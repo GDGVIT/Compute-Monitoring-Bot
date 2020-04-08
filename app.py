@@ -47,6 +47,11 @@ else:
 intro_text = """ I am a compute monitoring bot v1.\n
 I can perform some very basic functions like give you some basic updates about your system.\n
 Currently, I can monitor your cpu, ram, i/o read-write speed\n
+
+Currently, I only support following outputs,\n 
+1) cpu load- /cpu,\n
+2) ram usage - /ram \n
+3) change credentials - /enterDetails \n
 """
 
 extra = """
@@ -179,7 +184,7 @@ def done(update, context):
 
     update.message.reply_text("I learned these facts about you:"
                               "{}"
-                              "Until next time!".format(facts_to_str(user_data)))
+                              " Use these now to view the respective outputs \n 1) cpu load- /cpu,\n 2) ram usage - /ram \n".format(facts_to_str(user_data)))
 
     print(user_data)
     return ConversationHandler.END
