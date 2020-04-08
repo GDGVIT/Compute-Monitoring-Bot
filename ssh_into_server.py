@@ -11,7 +11,7 @@ def ssh_into_server(hostname, username, password, cmd_to_execute):
     stdin , stdout, stderr = c.exec_command(cmd_to_execute)
     output = stdout.readlines()
     output = ' '.join(output)
-    output = json.loads(output)
+    print("output is ", output)
     print( "Errors")
     print( stderr.read())
     c.close()
@@ -20,6 +20,6 @@ def ssh_into_server(hostname, username, password, cmd_to_execute):
 
 
 
-command = "curl https://london.my-netdata.io/api/v1/data\?chart\=system.cpu\&after\=-600\&points\=20\&group\=average\&format\=json\&options\=seconds\&options\=jsonwrapServer%20response "
+command = "curl http://localhost:19999/api/v1/data\?chart\=system.ram\&after\=-600\&points\=20\&group\=average\&format\=json\&options\=seconds\&options\=jsonwrapServer%20response "
 
-#ssh_into_server('192.168.43.34','noob4u', 'abhi24783589', str(command))
+ssh_into_server('192.168.43.34','noob4u', 'abhi24783589', str(command))

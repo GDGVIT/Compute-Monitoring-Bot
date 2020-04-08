@@ -7,8 +7,8 @@ from ssh_into_server import ssh_into_server
 
 import matplotlib.pyplot as plt
 
-command = "curl https://london.my-netdata.io/api/v1/data\?chart\=system.cpu\&after\=-600\&points\=20\&group\=average\&format\=json\&options\=seconds\&options\=jsonwrapServer%20response "
-
+cpu_command = "curl http://localhost:19999/api/v1/data\?chart\=system.cpu\&after\=-600\&points\=20\&group\=average\&format\=json\&options\=seconds\&options\=jsonwrapServer%20response"
+ram_command = "curl http://localhost:19999/api/v1/data\?chart\=system.ram\&after\=-600\&points\=20\&group\=average\&format\=json\&options\=seconds\&options\=jsonwrapServer%20response"
 
 def unix_to_datetime(time):
     return datetime.utcfromtimestamp(int(time)).strftime('%Y-%m-%d %H:%M:%S')
@@ -21,15 +21,17 @@ def getting_netdata_data(url=url):
     print(data)
     return data
 
-def plotting_cpu_vs_time(url=url):
+def plotting_cpu_vs_time(host, username, password):
     plt.clf()
-    data = ssh_into_server('192.168.43.34','noob4u', 'abhi24783589', str(command))
+    data = json.loads(ssh_into_server(host, username, password, str(cpu_command)))
+    print("data in cpu plot receive is ", data)
+    print(type(data))
     time = []
     cpu = []
     plt.xlabel('time') 
     plt.ylabel('cpu_usage') 
     plt.title('Cpu Usage v/s Time')
-    for i in data['data']:
+    for i in data.get('data'):
         time.append(i[0]) 
         cpu.append(i[7])
     
@@ -40,8 +42,8 @@ def plotting_cpu_vs_time(url=url):
     return buffer
 
 
-def preparing_ram_graph_data(url=url):
-    data = ssh_into_server('192.168.43.34','noob4u', 'abhi24783589', str(command))
+def preparing_ram_graph_data(host, username, password):
+    data = json.loads(ssh_into_server(host, username, password, str(ram_command)))
     time = []
     free_ram = []
     used_ram = []
@@ -49,7 +51,7 @@ def preparing_ram_graph_data(url=url):
     buffers_ram = []
     print(data)
     
-    for i in data['data']:
+    for i in data.get('data'):
         time.append(i[0]) 
         free_ram.append(i[1])
         used_ram.append(i[2])
