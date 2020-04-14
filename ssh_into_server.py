@@ -6,7 +6,11 @@ def ssh_into_server(hostname, username, password, cmd_to_execute):
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     print("Connecting to client")
-    c.connect( hostname = hostname, username = username, password=password, port=22)
+    try:
+        c.connect( hostname = hostname, username = username, password=password)
+    except Exception as e:
+        print("Unable to connect to the client")
+        return {"error": "Connection could not be done!"}
     print( "Connected to Client")
     stdin , stdout, stderr = c.exec_command(cmd_to_execute)
     output = stdout.readlines()
@@ -15,8 +19,11 @@ def ssh_into_server(hostname, username, password, cmd_to_execute):
     print( "Errors")
     print( stderr.read())
     c.close()
-    return output
-
+    if output:
+        return output
+    else:
+        print(stderr)
+        return {"error": stderr}
 
 
 

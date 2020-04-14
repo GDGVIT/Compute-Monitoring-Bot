@@ -2,6 +2,7 @@ import logging
 import os
 import random
 import sys
+import json
 
 from telegram import ReplyKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
@@ -12,6 +13,12 @@ from getting_compute_data import (
     plotting_and_returning_image,
     preparing_ram_graph_data
     
+)
+
+from getting_data_from_client import (
+    get_available_choices_to_monitor,
+    get_available_choices_to_monitor_list,
+    respond_to_server_request
 )
 
 from dotenv import load_dotenv
@@ -44,40 +51,37 @@ else:
     sys.exit(1)
 
 
-intro_text = """ I am a compute monitoring bot v1.\n
-I can perform some very basic functions like give you some basic updates about your system.\n
-Currently, I can monitor your cpu, ram, i/o read-write speed\n
+CHOOSING, TYPING_REPLY, TYPING_CHOICE = range(3)
 
-Currently, I only support following outputs,\n 
-1) cpu load- /cpu,\n
-2) ram usage - /ram \n
-3) enter/change credentials - /enterDetails \n
 
-Btw, I don't save credentials, so make sure to set your credentials before using 1 and 2
-"""
 
-extra = """
-Currently, I only support following outputs,\n 
-1) cpu load- /cpu,\n
-2) ram usage - /ram \n
+# intro_text = """ I am a compute monitoring bot v1.\n
+# I can perform some very basic functions like give you some basic updates about your system.\n
+# Currently, I can monitor your cpu, ram, i/o read-write speed\n
 
-Please enter the following info in order to let us monitor you
-"""
+# Currently, I only support following outputs,\n 
+# 1) cpu load- /cpu,\n
+# 2) ram usage - /ram \n
+# 3) enter/change credentials - /enterDetails \n
 
+# Btw, I don't save credentials, so make sure to set your credentials before using 1 and 2
+# """
+
+# extra = """
+# Currently, I only support following outputs,\n 
+# 1) cpu load- /cpu,\n
+# 2) ram usage - /ram \n
+
+# Please enter the following info in order to let us monitor you
+# """
+
+intro_text = "I am a compute monitoring bot v1"
+extra = "Please enter the following info in order to let us monitor you"
+
+# Functions to handle the bot
 
 def start(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text=intro_text)
-        
-# def host_enter(update, context):
-#     update.message.reply_text("Enter host")
-#     host = update.message.text
-    # update.message.reply_text("Enter username")
-    # username = update.message.text
-    # update.message.reply_text("Enter password")
-    # password = update.message.text
-    # print(username)
-    # print(password)
-    # print(host)
 
 
 def cpu_usage(update, context):
@@ -87,7 +91,13 @@ def cpu_usage(update, context):
         context.bot.send_message(chat_id=update.effective_chat.id, text=output)
     else:
         context.bot.send_message(chat_id=update.effective_chat.id, text="Please wait until we try to probe this server to get a response")
-        context.bot.send_photo(chat_id=update.effective_chat.id, photo=plotting_cpu_vs_time(user_data['Host'], user_data['Username'], user_data['Password']))
+    
+        cpu_data_output = plotting_cpu_vs_time(user_data['Host'], user_data['Username'], user_data['Password'])
+        if 'error' in cpu_data_output:
+            context.bot.send_message(chat_id=update.effective_chat.id, text=cpu_data_output['error'])    
+        else:
+            context.bot.send_photo(chat_id=update.effective_chat.id, photo=cpu_data_output)
+        
 def ram_usage(update, context):
     user_data = context.user_data
     output = user_data_check(user_data)
@@ -114,8 +124,9 @@ def ram_usage(update, context):
         context.bot.send_photo(chat_id=update.effective_chat.id, photo=buffers_ram)
         context.bot.send_message(chat_id=update.effective_chat.id, text='Buffer Ram Usage\n')
 
+def available_choices(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text=get_available_choices_to_monitor())
 
-CHOOSING, TYPING_REPLY, TYPING_CHOICE = range(3)
 
 reply_keyboard = [['Host', 'Username', 'Password'],
                   ['Done']]
@@ -128,7 +139,6 @@ def user_data_check(user_data):
         return "Username not set. Use /enterDetails to set it."
     if 'Password' not in user_data:
         return "Password not set. Use /enterDetails to set it."
-
 
 
 def facts_to_str(user_data):
@@ -155,14 +165,6 @@ def regular_choice(update, context):
     return TYPING_REPLY
 
 
-
-def custom_choice(update, context):
-    update.message.reply_text('Alright, please send me the category first, '
-                              'for example "Most impressive skill"')
-
-    return TYPING_CHOICE
-
-
 def received_information(update, context):
     user_data = context.user_data
     text = update.message.text
@@ -187,13 +189,77 @@ def done(update, context):
                               "{}"
                               " Use these now to view the respective outputs \n 1) cpu load- /cpu,\n 2) ram usage - /ram \n".format(facts_to_str(user_data)))
 
-    print(user_data)
+    #print(user_data)
     return ConversationHandler.END
 
 
 def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
+
+
+
+monitor_choices = get_available_choices_to_monitor_list()
+reply_keyboard_for_monitoring = [monitor_choices[:3],monitor_choices[3:6],monitor_choices[6:],['Done']]
+markup_for_monitoring = ReplyKeyboardMarkup(reply_keyboard_for_monitoring, one_time_keyboard=True)
+
+
+    # def facts_to_str(self, user_data):
+    #     facts = list()
+
+    #     for key, value in user_data.items():
+    #         facts.append('{} - {}'.format(key, value))
+    #     return "\n".join(facts).join(['\n', '\n'])
+
+
+def startformonitoring(update, context):
+    update.message.reply_text(extra,
+        reply_markup=markup_for_monitoring)
+
+    return CHOOSING
+
+
+def regular_choice_for_monitoring(update, context):
+    text = update.message.text
+    context.user_data['choice'] = text
+    update.message.reply_text(
+        'Press 1 to see  current stats,\n or 2 to view all stats for last 10 mins for {}\n'.format(text))
+    return TYPING_REPLY
+
+
+def received_information_for_monitoring(update, context):
+    user_data = context.user_data
+    text = update.message.text
+    
+    if str(text) == '1':
+        print("Performing current stats lookup only.....")
+        response = respond_to_server_request(user_data['choice'])
+        data = json.loads(response)
+        if 'Partitions' in data:
+            for i in data['Partitions']:
+                update.message.reply_text(str(data['Partitions'][i]) ,reply_markup=markup_for_monitoring)
+            update.message.reply_text("Total Data"+str(data['Total Read']) ,reply_markup=markup_for_monitoring)
+            update.message.reply_text("Total Write"+str(data['Total Write']) ,reply_markup=markup_for_monitoring)
+        else:
+            update.message.reply_text(response ,reply_markup=markup_for_monitoring)
+    elif str(text) == '2':
+        print("Performing lookup for last 10 mins....")
+    # category = user_data['choice']
+    # user_data[category] = text
+    # del user_data['choice']
+    # print(user_data)
+    
+
+    return CHOOSING
+
+def done_monitoring(update, context):
+    update.message.reply_text("Thank you for using our service")
+
+
+
+
+
+
 
 
 
@@ -208,7 +274,7 @@ if __name__=='__main__':
     updater.dispatcher.add_handler(CommandHandler("start", start))
     updater.dispatcher.add_handler(CommandHandler("cpu", cpu_usage))
     updater.dispatcher.add_handler(CommandHandler("ram", ram_usage))
-
+    updater.dispatcher.add_handler(CommandHandler("choice", available_choices))
     #updater.dispatcher.add_handler(MessageHandler(Filters.text, host_enter))
     updater.dispatcher.add_handler(
         ConversationHandler(
@@ -231,5 +297,28 @@ if __name__=='__main__':
         fallbacks=[MessageHandler(Filters.regex('^Done$'), done)]
     )
     )
-    
+
+    text = "|".join(get_available_choices_to_monitor_list())
+    updater.dispatcher.add_handler(
+        ConversationHandler(
+        entry_points=[CommandHandler('enterWhatToMonitor', startformonitoring)],
+        states={
+            CHOOSING: [MessageHandler(Filters.regex('^({})$'.format(text)),
+                                      regular_choice_for_monitoring),
+                       ],
+
+            TYPING_CHOICE: [MessageHandler(Filters.text,
+                                           regular_choice_for_monitoring)
+                            ],
+
+            TYPING_REPLY: [MessageHandler(Filters.text,
+                                          received_information_for_monitoring),
+                           ],
+        },
+
+        fallbacks=[MessageHandler(Filters.regex('^Done$'), done_monitoring)]
+    )
+    )
+
+
     run(updater)
