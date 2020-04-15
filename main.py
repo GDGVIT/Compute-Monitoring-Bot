@@ -498,7 +498,7 @@ if __name__=='__main__':
         entry_points=[CommandHandler('monitor', start_monitoring)],
 
         states={
-            CHOOSING: [MessageHandler(Filters.regex('^({})$'.format('|'.join(get_available_choices_to_monitor_list()))),
+            CHOOSING: [MessageHandler(Filters.regex('^(System Information|Boot Time|Cpu Info|Virtual Memory Info|Swap Memory|Disk Info|Network Info)$'),
                                       choice_for_choosing_which_factor_to_monitor),
                        ],
 
