@@ -44,6 +44,34 @@ def plotting_cpu_vs_time(host, username, password):
     return buffer
 
 
+def plotting_cpu_vs_time_without_ssh(ip_address):
+    plt.clf()
+    response = requests.get('http://{}:19999/api/v1/data?chart=cpu.cpu0&after=-600&points=20&group=average&format=json&options=seconds&options=jsonwrapServer%20response'.format(ip_address))
+    
+    if response.status_code == 200:
+        data = json.loads(response.text)
+    else:
+        print(response.status_code)
+        return False
+    
+    print("Data in cpu plot receive is ", data)
+    print(type(data))
+    time = []
+    cpu = []
+    plt.xlabel('time') 
+    plt.ylabel('cpu_usage') 
+    plt.title('Cpu Usage v/s Time')
+    for i in data.get('data'):
+        time.append(unix_to_datetime(i[0])) 
+        cpu.append(i[7])
+    
+    buffer = BytesIO()
+    plt.plot(time, cpu)
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+    return buffer
+
+
 def preparing_ram_graph_data(host, username, password):
     data = json.loads(ssh_into_server(host, username, password, str(ram_command)))
     time = []

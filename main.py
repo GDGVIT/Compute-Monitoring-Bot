@@ -53,6 +53,10 @@ from getting_data_from_client import (
     respond_to_server_request
 )
 
+from getting_compute_data import (
+    plotting_cpu_vs_time_without_ssh
+)
+
 
 
 
@@ -226,7 +230,7 @@ def probe_server_from_bot(update, context):
 # Need to hardcode this(Done)
 
 monitor_reply_keyboard = [['System Information','Virtual Memory Info'],['Boot Time','Cpu Info','Swap Memory'],
-['Disk Info','Network Info'], ['Exit']
+['Disk Info','Network Info', 'Show Plot'], ['Exit']
 ]
 monitor_markup = ReplyKeyboardMarkup(monitor_reply_keyboard, one_time_keyboard=True)
 
@@ -253,6 +257,14 @@ def choice_for_choosing_which_factor_to_monitor(update, context):
     if text == 'Cpu Info':
         output = getting_current_data_from_server(ip_address, 'Cpu Info')
         update.message.reply_text(output)
+        if 'plot' in user_data:
+            if user_data['plot']:
+                if plotting_cpu_vs_time_without_ssh(ip_address):
+                    context.bot.send_photo(chat_id=update.effective_chat.id, photo=plotting_cpu_vs_time_without_ssh(ip_address))
+                else:
+                    update.message.reply_text("Unable to generate image")
+
+
         update.message.reply_text("Choose another option to view different stats, or press Exit to exit",reply_markup=monitor_markup)
     elif text == 'Virtual Memory Info':
         output = getting_current_data_from_server(ip_address, 'Virtual Memory Info')
@@ -280,6 +292,17 @@ def choice_for_choosing_which_factor_to_monitor(update, context):
         #     update.message.reply_text(output)
         update.message.reply_text("We encountered some error in Disk Info")
         update.message.reply_text("Choose another option to view different stats, or press Exit to exit",reply_markup=monitor_markup)
+    elif text == 'Show Plot':
+        if 'plot' in user_data:
+            if user_data['plot']:
+                update.message.reply_text("Stats which can generate plots has been disabled", reply_markup=monitor_markup)
+                user_data['plot'] = 0
+            else:
+                update.message.reply_text("Stats which can generate plots will now be enabled", reply_markup=monitor_markup)
+                user_data['plot'] = 1
+        else:
+            update.message.reply_text("Stats which can generate plots will now be enabled",reply_markup=monitor_markup)
+            user_data['plot'] = 1
 
 def getting_data_for_choice_made_for_monitor(update, context):
     text = update.message.text
@@ -332,8 +355,7 @@ def start_schedule_updates(update, context):
 def choosing_schedule_parameters(update, context):
     text = update.message.text
     context.user_data['choice'] = text
-    update.message.reply_text(
-        'Please enter {}'.format(text))
+    update.message.reply_text('Please enter {}'.format(text))
 
     return TYPING_REPLY
 
@@ -498,7 +520,7 @@ if __name__=='__main__':
         entry_points=[CommandHandler('monitor', start_monitoring)],
 
         states={
-            CHOOSING: [MessageHandler(Filters.regex('^(System Information|Boot Time|Cpu Info|Virtual Memory Info|Swap Memory|Disk Info|Network Info)$'),
+            CHOOSING: [MessageHandler(Filters.regex('^(System Information|Boot Time|Cpu Info|Virtual Memory Info|Swap Memory|Disk Info|Network Info|Show Plot)$'),
                                       choice_for_choosing_which_factor_to_monitor),
                        ],
 
