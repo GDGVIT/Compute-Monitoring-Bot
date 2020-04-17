@@ -23,7 +23,8 @@ from helper_functions import (
     making_a_cron_job,
     deleting_a_cron_job,
     deleting_all_cron_jobs,
-    getting_current_data_from_server
+    getting_current_data_from_server,
+    user_choice_for_monitoring_regex_check
 )
 
 logger = logging.getLogger()
@@ -269,6 +270,13 @@ def choice_for_choosing_which_factor_to_monitor(update, context):
     elif text == 'Virtual Memory Info':
         output = getting_current_data_from_server(ip_address, 'Virtual Memory Info')
         update.message.reply_text(output)
+
+        # if 'plot' in user_data:
+        #     if user_data['plot']:
+        #         if plotting_cpu_vs_time_without_ssh(ip_address):
+        #             context.bot.send_photo(chat_id=update.effective_chat.id, photo=plotting_cpu_vs_time_without_ssh(ip_address))
+        #         else:
+        #             update.message.reply_text("Unable to generate image")
         update.message.reply_text("Choose another option to view different stats, or press Exit to exit",reply_markup=monitor_markup)
     elif text == 'System Information':
         output = getting_current_data_from_server(ip_address, 'System Information')
@@ -481,6 +489,158 @@ def deleting_all_scheduler(update, context):
             update.message.reply_text("Error in  deleting all Scheduled Monitors")
 
 
+# Alternate thought for monitoring
+
+RE_INITIALISE, USER_RESPONSE, DISPLAY_STUFF = range(3)
+
+
+bot_response_for_new_monitoring_start = """Choose one or more options to start monitoring them:\n
+1)System Information
+2)Virtual Memory Info
+3)Boot Time
+4)Cpu Info
+5)Swap Memory
+6)Disk Info
+7)Network Info
+
+Enter your choice as 6 if you want to monitor disk only
+You can also choose multuple, like enter choice as 23
+to see virtual memory and boot time both in the order
+you want.
+"""
+
+def start_monitoring_new(update, context):
+    user_data = context.user_data
+    if 'ip_address' not in user_data:
+        update.message.reply_text("Ip not set. Please user /setIp to set the Ip of the system to monitor")    
+    else:
+        if 'monitor' not in user_data:
+            step = 1
+            user_data['monitor'] = {}
+            user_data['monitor']['step'] = step
+        else:
+            step = user_data['monitor']['step']
+        ip_address = user_data['ip_address']
+        if check_ip(ip_address):
+            if step == 1:
+                update.message.reply_text("Cool, You chose to start monitoring system {}".format(ip_address))
+            update.message.reply_text(bot_response_for_new_monitoring_start)
+            update.message.reply_text("Please enter your choice based on the above instructions")
+            return USER_RESPONSE
+        else:
+            update.message.reply_text("You set up an improper Ip, please setup a proper one at /setIp")
+
+
+def processing_user_response_while_monitoring(update, context):
+    user_data = context.user_data
+    step = user_data['monitor']['step']
+    print(step)
+    if str(step) == '1':
+        user_response = update.message.text
+        user_data['monitor']['user_response'] = user_response
+        if not user_choice_for_monitoring_regex_check(user_response):
+            update.message.reply_text("Invalid choice entered, please reenter")
+            return RE_INITIALISE
+
+        user_data['monitor']['step'] = step + 1
+        print(user_data['monitor']['step'])
+        update.message.reply_text("This step was called")
+
+        return DISPLAY_STUFF
+    elif step == 3:
+        user_response = update.message.text
+        if user_response == 'yes':
+            user_data['monitor']['show_image'] = 1
+            user_data['monitor']['step'] = step + 1
+        elif user_response == 'no':
+            user_data['monitor']['show_image'] = 0
+            user_data['monitor']['step'] = step + 1
+        else:
+            update.message.reply_text("Invalid response, please enter a proper response!")
+        return DISPLAY_STUFF
+
+    elif step == 5:
+        user_response = update.message.text
+        if user_response == 'yes':
+            user_data['monitor']['continue'] = 1
+            del(user_data['monitor'])
+            return RE_INITIALISE
+        elif user_response == 'no':
+            update.message.reply_text("You chose to end. Thank you for using our service!!")
+            return ConversationHandler.END
+        else:
+            update.message.reply_text("Invalid response, please enter a proper response!")
+
+
+    
+system_monitoring_choices = {
+'1':"System Information",
+'2':"Virtual Memory Info",
+'3':"Boot Time",
+'4':"Cpu Info",
+'5':"Swap Memory",
+'6':"Disk Info",
+'7':"Network Info"
+}
+
+
+def displaying_stuff_for_user_response(update, context):
+    user_data = context.user_data
+    step = user_data['monitor']['step']
+    print(step)
+    if str(step) == '2':
+        print("I was called")
+        update.message.reply_text("Do you want to see graphs and related visualization for the monitoring choices?(if available)")
+        update.message.reply_text("Reply in 'yes' or 'no'")
+        user_data['monitor']['step'] = step + 1
+        return USER_RESPONSE
+    if step == 4:
+        user_response = user_data['monitor']['user_response']
+        for i in user_response:
+
+            if text == 'Cpu Info':
+                output = getting_current_data_from_server(ip_address, 'Cpu Info')
+                update.message.reply_text(output)
+                if user_data['monitor']['show_image'] == 1:
+                    if plotting_cpu_vs_time_without_ssh(ip_address):
+                        context.bot.send_photo(chat_id=update.effective_chat.id, photo=plotting_cpu_vs_time_without_ssh(ip_address))
+                    else:
+                        update.message.reply_text("Unable to generate image")
+            elif text == 'Virtual Memory Info':
+                output = getting_current_data_from_server(ip_address, 'Virtual Memory Info')
+                update.message.reply_text(output)
+            elif text == 'System Information':
+                output = getting_current_data_from_server(ip_address, 'System Information')
+                update.message.reply_text(output)
+            elif text == 'Boot Time':
+                output = getting_current_data_from_server(ip_address, 'Boot Time')
+                update.message.reply_text(output)
+            elif text == 'Swap Memory':
+                output = getting_current_data_from_server(ip_address, 'Swap Memory')
+                update.message.reply_text(output)
+            elif text == 'Network Info':
+                output = getting_current_data_from_server(ip_address, 'Network Info')
+                update.message.reply_text(output)
+            elif text == 'Disk Info':
+                # output = getting_current_data_from_server(ip_address, 'Disk Info')
+                # for i in output:
+                #     update.message.reply_text(output)
+                update.message.reply_text("We encountered some error in Disk Info")
+        
+        update.message.reply_text("Do you want to continue monitoring ? Answer in 'yes' or 'no'")
+        user_data['monitor']['step'] = step + 1
+        return USER_RESPONSE
+    
+
+
+    
+    
+
+        
+
+
+
+
 
 if __name__=='__main__':
 
@@ -579,6 +739,29 @@ if __name__=='__main__':
     )
 
     updater.dispatcher.add_handler(CommandHandler("delete_all", deleting_all_scheduler))
+
+
+    updater.dispatcher.add_handler(
+        ConversationHandler(
+        entry_points=[CommandHandler('start_monitoring', start_monitoring_new)],
+
+        states={
+            RE_INITIALISE: [MessageHandler(Filters.text,
+                                      start_monitoring_new),
+                       ],
+
+            USER_RESPONSE: [MessageHandler(Filters.text,
+                                           processing_user_response_while_monitoring),
+                            ],
+
+            DISPLAY_STUFF: [MessageHandler(Filters.text,
+                                          displaying_stuff_for_user_response),
+                           ],
+        },
+
+        fallbacks=[MessageHandler(Filters.regex('^Exit$'), cancel)]
+    )
+    )
     
     run(updater)
 
