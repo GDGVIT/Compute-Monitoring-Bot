@@ -7,7 +7,7 @@ import json
 from telegram import ReplyKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
 
-from getting_compute_data import (
+from utils.getting_compute_data import (
     getting_netdata_data, 
     plotting_cpu_vs_time,
     plotting_and_returning_image,
@@ -15,7 +15,7 @@ from getting_compute_data import (
     
 )
 
-from getting_data_from_client import (
+from utils.getting_data_from_client import (
     get_available_choices_to_monitor,
     get_available_choices_to_monitor_list,
     respond_to_server_request
@@ -35,20 +35,20 @@ logger = logging.getLogger()
 mode = os.getenv("mode")
 token = os.getenv("token")
 
-if mode == "dev":
-    def run(updater):
+def run(updater):
+    
+    if mode == "dev":
         updater.start_polling()
-elif mode == "prod":
-    def run(updater):
+    elif mode == "prod":
         PORT = int(os.environ.get("PORT", "8443"))
         HEROKU_APP_NAME = os.environ.get("HEROKU_APP_NAME")
         updater.start_webhook(listen="0.0.0.0",
-                              port=PORT,
-                              url_path=token)
+                            port=PORT,
+                            url_path=token)
         updater.bot.set_webhook("https://{}.herokuapp.com/{}".format(HEROKU_APP_NAME, token))
-else:
-    logger.error("No mode specified!")
-    sys.exit(1)
+    else:
+        logger.error("No mode specified!")
+        sys.exit(1)
 
 
 CHOOSING, TYPING_REPLY, TYPING_CHOICE = range(3)
@@ -81,7 +81,7 @@ extra = "Please enter the following info in order to let us monitor you"
 # Functions to handle the bot
 
 def start(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text=intro_text)
+    context.bot.send_message(chat_id=update.effective_chat.id, text='hello')
 
 
 def cpu_usage(update, context):
@@ -130,16 +130,18 @@ def available_choices(update, context):
 
 reply_keyboard = [['Host', 'Username', 'Password'],
                   ['Done']]
-markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
+markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True) ## for what?
+
 
 def user_data_check(user_data):
     if 'Host' not in user_data:
         return "Host not set. Use /enterDetails to set it."
-    if 'Username' not in user_data:
+    elif 'Username' not in user_data:
         return "Username not set. Use /enterDetails to set it."
-    if 'Password' not in user_data:
+    elif 'Password' not in user_data:
         return "Password not set. Use /enterDetails to set it."
-
+    else:
+        return False
 
 def facts_to_str(user_data):
     facts = list()
@@ -152,18 +154,14 @@ def facts_to_str(user_data):
 def startchoice(update, context):
     update.message.reply_text(extra,
         reply_markup=markup)
-
     return CHOOSING
-
 
 def regular_choice(update, context):
     text = update.message.text
     context.user_data['choice'] = text
     update.message.reply_text(
         'Please enter your {}'.format(text))
-
     return TYPING_REPLY
-
 
 def received_information(update, context):
     user_data = context.user_data
@@ -179,7 +177,6 @@ def received_information(update, context):
 
     return CHOOSING
 
-
 def done(update, context):
     user_data = context.user_data
     if 'choice' in user_data:
@@ -192,15 +189,14 @@ def done(update, context):
     #print(user_data)
     return ConversationHandler.END
 
-
 def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
 
-
 monitor_choices = get_available_choices_to_monitor_list()
 reply_keyboard_for_monitoring = [monitor_choices[:3],monitor_choices[3:6],monitor_choices[6:],['Done']]
+print(reply_keyboard_for_monitoring)
 markup_for_monitoring = ReplyKeyboardMarkup(reply_keyboard_for_monitoring, one_time_keyboard=True)
 
 
@@ -213,8 +209,8 @@ markup_for_monitoring = ReplyKeyboardMarkup(reply_keyboard_for_monitoring, one_t
 
 
 def startformonitoring(update, context):
-    update.message.reply_text(extra,
-        reply_markup=markup_for_monitoring)
+    print(1)
+    update.message.reply_text(extra,reply_markup=markup_for_monitoring)
 
     return CHOOSING
 
@@ -254,16 +250,7 @@ def received_information_for_monitoring(update, context):
 
 def done_monitoring(update, context):
     update.message.reply_text("Thank you for using our service")
-
-
-
-
-
-
-
-
-
-
+    return ConversationHandler.END
     
 
 if __name__=='__main__':
@@ -271,18 +258,18 @@ if __name__=='__main__':
     updater = Updater(token=token, use_context=True)
     dispatcher = updater.dispatcher
 
-    updater.dispatcher.add_handler(CommandHandler("start", start))
-    updater.dispatcher.add_handler(CommandHandler("cpu", cpu_usage))
-    updater.dispatcher.add_handler(CommandHandler("ram", ram_usage))
-    updater.dispatcher.add_handler(CommandHandler("choice", available_choices))
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(CommandHandler("cpu", cpu_usage))
+    dispatcher.add_handler(CommandHandler("ram", ram_usage))
+    dispatcher.add_handler(CommandHandler("choice", available_choices))
+    dispatcher.add_handler(CommandHandler("some", startformonitoring))
     #updater.dispatcher.add_handler(MessageHandler(Filters.text, host_enter))
-    updater.dispatcher.add_handler(
-        ConversationHandler(
-        entry_points=[CommandHandler('enterDetails', startchoice)],
+    choice_handler = ConversationHandler(
+        entry_points = [CommandHandler("enter", startchoice)],
 
         states={
             CHOOSING: [MessageHandler(Filters.regex('^(Host|Username|Password)$'),
-                                      regular_choice),
+                                      regular_choice)
                        ],
 
             TYPING_CHOICE: [MessageHandler(Filters.text,
@@ -290,35 +277,33 @@ if __name__=='__main__':
                             ],
 
             TYPING_REPLY: [MessageHandler(Filters.text,
-                                          received_information),
-                           ],
+                                          received_information)
+                           ]
         },
 
         fallbacks=[MessageHandler(Filters.regex('^Done$'), done)]
     )
-    )
+    
+    dispatcher.add_handler(choice_handler)
 
-    text = "|".join(get_available_choices_to_monitor_list())
-    updater.dispatcher.add_handler(
-        ConversationHandler(
-        entry_points=[CommandHandler('enterWhatToMonitor', startformonitoring)],
-        states={
-            CHOOSING: [MessageHandler(Filters.regex('^({})$'.format(text)),
-                                      regular_choice_for_monitoring),
-                       ],
+    # text = "|".join(get_available_choices_to_monitor_list())
+    # monitor_handler = ConversationHandler(
+    #     entry_points=[CommandHandler("enterhere", startformonitoring)],
+    #     states={
+    #         CHOOSING: [MessageHandler(Filters.regex('^({})$'.format(text)),
+    #                                   regular_choice_for_monitoring)
+    #                    ],
 
-            TYPING_CHOICE: [MessageHandler(Filters.text,
-                                           regular_choice_for_monitoring)
-                            ],
+    #         TYPING_CHOICE: [MessageHandler(Filters.text,
+    #                                        regular_choice_for_monitoring)
+    #                         ],
 
-            TYPING_REPLY: [MessageHandler(Filters.text,
-                                          received_information_for_monitoring),
-                           ],
-        },
+    #         TYPING_REPLY: [MessageHandler(Filters.text,
+    #                                       received_information_for_monitoring)
+    #                        ]
+    #     },
 
-        fallbacks=[MessageHandler(Filters.regex('^Done$'), done_monitoring)]
-    )
-    )
-
-
+    #     fallbacks=[MessageHandler(Filters.regex('^Done$'), done_monitoring)]
+    # )
+    # dispatcher.add_handler(monitor_handler)
     run(updater)
