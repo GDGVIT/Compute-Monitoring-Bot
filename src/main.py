@@ -9,6 +9,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Conve
 
 from dotenv import load_dotenv
 from pathlib import Path
+import sys
 
 env_path = Path('.env')
 load_dotenv(dotenv_path=env_path)
@@ -17,7 +18,7 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
-from helper_functions import (
+from utils.helper_functions import (
     check_ip,
     probe_server,
     making_a_cron_job,
@@ -48,13 +49,13 @@ else:
     sys.exit(1)
 
 
-from getting_data_from_client import (
+from utils.getting_data_from_client import (
     get_available_choices_to_monitor_list,
     get_available_choices_to_monitor,
     respond_to_server_request
 )
 
-from getting_compute_data import (
+from utils.getting_compute_data import (
     plotting_cpu_vs_time_without_ssh
 )
 
@@ -205,7 +206,7 @@ def cancel(update, context):
         del user_data['choice']
     
     if 'ip_address' in user_data:
-        update.message.reply_text("You Ip Address is currently set as {}".format(user_data['ip_address']))
+        update.message.reply_text("""You Ip Address is currently set as {}\n.User /start_monitoring to start monitoring values""".format(user_data['ip_address']))
     else:
         update.message.reply_text("You chose to cancel.")
     #print(user_data)
@@ -231,8 +232,8 @@ def probe_server_from_bot(update, context):
 # Need to hardcode this(Done)
 
 monitor_reply_keyboard = [['System Information','Virtual Memory Info'],['Boot Time','Cpu Info','Swap Memory'],
-['Disk Info','Network Info', 'Show Plot'], ['Exit']
-]
+['Disk Info','Network Info', 'Show Plot'], ['Exit']]
+
 monitor_markup = ReplyKeyboardMarkup(monitor_reply_keyboard, one_time_keyboard=True)
 
 
@@ -512,7 +513,8 @@ you want.
 def start_monitoring_new(update, context):
     user_data = context.user_data
     if 'ip_address' not in user_data:
-        update.message.reply_text("Ip not set. Please user /setIp to set the Ip of the system to monitor")    
+        update.message.reply_text("Ip not set. Please user /setIp to set the Ip of the system to monitor")  
+        return ConversationHandler.END  
     else:
         if 'monitor' not in user_data:
             step = 1
@@ -529,10 +531,12 @@ def start_monitoring_new(update, context):
             return USER_RESPONSE
         else:
             update.message.reply_text("You set up an improper Ip, please setup a proper one at /setIp")
+            return ConversationHandler.END
 
 
 def processing_user_response_while_monitoring(update, context):
     user_data = context.user_data
+    print(user_data)
     step = user_data['monitor']['step']
     print(step)
     if str(step) == '1':
@@ -633,15 +637,207 @@ def displaying_stuff_for_user_response(update, context):
     
 
 
+### MY Version of the compute monitorig setup thing(UBAID) ######
+
+monitor_reply_keyboard = [['System Information','Virtual Memory Info'],['Boot Time','Cpu Info','Swap Memory'],
+['Disk Info','Network Info'], ['Exit', 'Done']]
+
+monitor_markup = ReplyKeyboardMarkup(monitor_reply_keyboard, one_time_keyboard=True)
+
+USER_RESPONSE, ADVANCE_OPTION, IMAGE_SETTINGS = range(3)
+
+bot_response_for_new_monitoring_start = """Choose one or more options to start monitoring them:\n
+1)System Information
+2)Virtual Memory Info
+3)Boot Time
+4)Cpu Info
+5)Swap Memory
+6)Disk Info
+7)Network Info
+
+Choose options one after the another that you want to monitor, press "Done" if you are done with
+selecting params.
+"""
+
+def choose_options_for_monitoring(update,context):
+    user_data = context.user_data
+    print(user_data)
     
+    if 'ip_address' not in user_data:
+        update.message.reply_text("Ip not set. Please user /setIp to set the Ip of the system to monitor")  
+        return ConversationHandler.END  
     
+    else:
+        if 'monitor' not in user_data:
+            print(1)
+            state = 'initial'
+            user_data['monitor'] = {}
+            user_data['monitor']['state'] = state
+            
+        else:
+            state = user_data['monitor']['state']
+            
+        ip_address = user_data['ip_address']
+        
+        if check_ip(ip_address):
+            
+            if user_data['monitor']['state'] == 'initial':
+                update.message.reply_text("Cool, You chose to start monitoring system {}".format(ip_address))
+            
+            elif state == 'Exit':
+                update.message.reply_text('Already defined values for monitoring. Do you want to reset things?',\
+                    reply_markup = ReplyKeyboardMarkup([['Yes'], ['No']], one_time_keyboard=True))
+                return USER_RESPONSE
+            # update.message.reply_text('Choose from the below value')
+            update.message.reply_text("Please enter your choice based on the above instructions", \
+                reply_markup = monitor_markup)
+            return USER_RESPONSE
+        
+        else:
+            
+            update.message.reply_text("You set up an improper Ip, please setup a proper one at /setIp")
+            return ConversationHandler.END
+        
+        
+def select_options_for_monitoring(update,context):
+    
+    user_data = context.user_data
+    state = user_data['monitor']['state']
+    user_response = update.message.text
+        
+    if state == 'initial':
+        if user_response == 'Done':
+            user_data['monitor']['state'] = 'Done'
+            user_data['monitor']['response'] = 'No'
+            user_data['monitor']['monitor_variables'] = []
+            update.message.reply_text('Are you sure you done selecting items?', \
+                reply_markup = ReplyKeyboardMarkup([['Yes'], ['No']], one_time_keyboard = True))
+        
+        elif user_response == 'Exit':
+            user_data['monitor']['state'] = 'initial'
+            update.message.reply_text('Process Ended!')
+            return ConversationHnadler.END
+        
+        else:
+            user_data['monitor']['user_response'] = user_response
+            user_data['monitor']['monitor_variables'] = []
+            user_data['monitor']['state'] = 'non-initial'
+            user_data['monitor']['monitor_variables'].append(user_response)
+            update.message.reply_text("You have selected " +\
+                user_data['monitor']['user_response'] + ". Added to Monitoring List!")
+            
+            choose_options_for_monitoring(update,context)
+
+    
+    elif state == 'non-initial':
+        
+        if user_response == 'Done':
+            user_data['monitor']['state'] = 'Done'
+            user_data['monitor']['response'] = 'No' 
+            update.message.reply_text('Are you sure you done selecting items?', \
+                reply_markup = ReplyKeyboardMarkup([['Yes'], ['No']], one_time_keyboard = True))
+            return USER_RESPONSE
+           
+        elif user_response == 'Exit':
+            user_data['monitor']['state'] = 'initial'
+            update.message.reply_text('Process Ended!')
+            return ConversationHnadler.END 
+
+        elif user_response not in user_data['monitor']['monitor_variables']:
+            user_data['monitor']['user_response'] = user_response
+            user_data['monitor']['monitor_variables'].append(user_response)
+            update.message.reply_text("You have selected " + \
+                user_data['monitor']['user_response'] + ". Added to Monitoring List!")
+            
+            choose_options_for_monitoring(update,context)
+        else:
+            if len(set(user_data['monitor']['monitor_variables'])) == 7:
+                user_data['monitor']['state'] = 'Exit'
+                update.message.reply_text("Done Selecting monitoring values!")
+                
+            else:
+                update.message.reply_text('Already Selected choose another value!')
+                choose_options_for_monitoring(update,context)
 
         
+    elif state == 'Exit':
+        if user_response == 'Yes':
+            user_data['monitor']['state'] = 'inital'
+        else:
+            update.message.reply_text('Exiting the process!!')
+            return ConversationHandler.END
+
+        
+    elif state == 'Done':
+        if user_response == 'Yes':
+            user_data['monitor']['state'] = 'Exit'
+            update.message.reply_text("Done Selecting monitoring values!")
+            prepare_end_message(update,context)
+        elif user_response == 'No':
+            if len(set(user_data['monitor']['monitor_variables'])) == 7:
+                update.message.reply_text("Done Selecting monitoring values!")
+                prepare_end_message(update,context)
+            else:
+                update.message.reply_text("Continue Selecting the values!")
+                choose_options_for_monitoring(update,context)
+
+        else:
+            update.message.reply_text('Invalid Response!')
+            update.message.reply_text('Are you sure you done selecting items?', \
+                reply_markup = ReplyKeyboardMarkup([['Yes'], ['No']], one_time_keyboard = True))
+            
 
 
+def cancel_monitoring_settings(update,context):   
+    return USER_RESPONSE
+
+def prepare_end_message(update,context):
+    user_data = context.user_data
+    bot_response_at_end_of_monitoring = """You have selected these options for monitoring:\n"""
+
+    
+    for i in range(len(set(user_data['monitor']['monitor_variables']))):
+        response_str = str(i+1) + ". " + user_data['monitor']['monitor_variables'][i] + '\n'
+        bot_response_at_end_of_monitoring+=response_str
+        
+    update.message.reply_text(bot_response_at_end_of_monitoring)
+    update.message.reply_text('Choose your next action' , \
+        reply_markup=ReplyKeyboardMarkup([['Add ons'],['Begin Monitoring'],['Exit']]))
+    return IMAGE_OPTION
+
+def choose_adv_setting(update,context):
+    update.message.reply_text('Choose your next action' , \
+        reply_markup=ReplyKeyboardMarkup([['Add ons'],['Begin Monitoring'],['Exit']]))
+    return IMAGE_OPTION
 
 
+def set_advance_settings(update,context):
+    user_data = context.user_data
+    user_response = update.message.text
+    
+    if user_response == 'Add ons':
+        update.message.reply_text("Choose the appropiate setting u=you want to apply",\
+            reply_markup = ReplyKeyboardMarkup([['Add visual Graphs'],['Schedule Monitoring'],['Exit']]))
+        return IMAGE_SETTINGS
+    
+    elif user_response == 'Begin Monitoring':
+        print("do monitoring stuff here, call the monitoring function here")
+        
+    elif user_response == 'Exit':
+        update.message.reply_text("Exiting!!")
+        return ConversationHandler.END
+    
+    else:
+        update.message.reply_text("Invalid option. Try again!")
+        choose_adv_setting(update,context)
 
+def set_image_Settings(update,context):
+    
+    ## add here all the image related settings, you can implement it like i did for choosing monitoring values!!
+    pass
+
+    
+        
 if __name__=='__main__':
 
     updater = Updater(token=token, use_context=True)
@@ -721,6 +917,7 @@ if __name__=='__main__':
         ]
 
     )
+        
     )
     
     updater.dispatcher.add_handler(
@@ -741,25 +938,28 @@ if __name__=='__main__':
     updater.dispatcher.add_handler(CommandHandler("delete_all", deleting_all_scheduler))
 
 
+
+### My version of conversation handling (UBAID)
+
     updater.dispatcher.add_handler(
         ConversationHandler(
-        entry_points=[CommandHandler('start_monitoring', start_monitoring_new)],
+        entry_points=[CommandHandler('start_monitoring', choose_options_for_monitoring)],
 
         states={
-            RE_INITIALISE: [MessageHandler(Filters.text,
-                                      start_monitoring_new),
-                       ],
-
+           
             USER_RESPONSE: [MessageHandler(Filters.text,
-                                           processing_user_response_while_monitoring),
+                                           select_options_for_monitoring),
+                            ],
+            ADVANCE_OPTION : [MessageHandler(Filters.text,
+                                           set_advance_settings),
+                            ],
+            IMAGE_SETTINGS : [MessageHandler(Filters.text,
+                                           set_image_Settings),
                             ],
 
-            DISPLAY_STUFF: [MessageHandler(Filters.text,
-                                          displaying_stuff_for_user_response),
-                           ],
         },
 
-        fallbacks=[MessageHandler(Filters.regex('^Exit$'), cancel)]
+        fallbacks=[MessageHandler(Filters.regex('^Exit$'), cancel_monitoring_settings)]
     )
     )
     
