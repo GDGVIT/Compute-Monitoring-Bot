@@ -794,8 +794,6 @@ def cancel_monitoring_settings(update,context):
 def prepare_end_message(update,context):
     user_data = context.user_data
     bot_response_at_end_of_monitoring = """You have selected these options for monitoring:\n"""
-
-    
     for i in range(len(set(user_data['monitor']['monitor_variables']))):
         response_str = str(i+1) + ". " + user_data['monitor']['monitor_variables'][i] + '\n'
         bot_response_at_end_of_monitoring+=response_str
@@ -803,25 +801,32 @@ def prepare_end_message(update,context):
     update.message.reply_text(bot_response_at_end_of_monitoring)
     update.message.reply_text('Choose your next action' , \
         reply_markup=ReplyKeyboardMarkup([['Add ons'],['Begin Monitoring'],['Exit']]))
-    return IMAGE_OPTION
 
+    #return IMAGE_OPTION
+    return IMAGE_SETTINGS
 def choose_adv_setting(update,context):
     update.message.reply_text('Choose your next action' , \
         reply_markup=ReplyKeyboardMarkup([['Add ons'],['Begin Monitoring'],['Exit']]))
-    return IMAGE_OPTION
-
+    #return IMAGE_OPTION
+    return IMAGE_SETTINGS
 
 def set_advance_settings(update,context):
     user_data = context.user_data
     user_response = update.message.text
     
     if user_response == 'Add ons':
-        update.message.reply_text("Choose the appropiate setting u=you want to apply",\
+        update.message.reply_text("Choose the appropiate setting you want to apply",\
             reply_markup = ReplyKeyboardMarkup([['Add visual Graphs'],['Schedule Monitoring'],['Exit']]))
         return IMAGE_SETTINGS
     
     elif user_response == 'Begin Monitoring':
+        print("I am stuck here")
+        user_data = context.user_data
         print("do monitoring stuff here, call the monitoring function here")
+        for i in user_data['monitor_variables']:
+            output = getting_current_data_from_server(ip_address, i)
+            update.message.reply_text(output)
+
         
     elif user_response == 'Exit':
         update.message.reply_text("Exiting!!")
@@ -834,10 +839,134 @@ def set_advance_settings(update,context):
 def set_image_Settings(update,context):
     
     ## add here all the image related settings, you can implement it like i did for choosing monitoring values!!
-    pass
+    return 
 
     
+### Inspired from Ubaid Bhaiya's Bot style
+
+def initialize_variables_for_bot(update, context):
+    user_data = context.user_data
+    user_data['monitor'] = {}
+    user_data['monitor']['state'] = 'initial'
+    user_data['monitor']['user_response'] = ''
+    user_data['monitor']['monitor_variables'] = []
+    user_data['monitor']['add_ons'] = []
+    user_data['monitor']['notifications_set'] = {}
+
+
+
+def start_bot_for_monitoring(update, context):
+    user_data = context.user_data
+    # This takes care to check if user ip address is there in memory or not.    
+    if 'ip_address' not in user_data:
+        update.message.reply_text("Ip not set. Please user /setIp to set the Ip of the system to monitor")  
+        return ConversationHandler.END  
+    else:   
+        ip_address = user_data['ip_address']
+        # Checking if Ip address is a valid regex, and setting up initial parameters
+        if check_ip(ip_address):
+            # Making arrangements to store parameters asked by bot
+            initialize_variables_for_bot(update, context)
+            # Variables initialized in memory, preparing to send welcome message to user
+            update.message.reply_text("Cool, You chose to start monitoring system {}".format(ip_address))
+            update.message.reply_text("Please enter your choice based on the above instructions", \
+                reply_markup = monitor_markup)
+            return USER_RESPONSE
+        else:
+            update.message.reply_text("You set up an improper Ip, please setup a proper one at /setIp")
+            return ConversationHandler.END
+
+
+def selecting_monitoring_values_by_user(update, context):
+    user_data = context.user_data
+    state = user_data['monitor']['state']
+    user_response = update.message.text
+
+    if state == 'initial':
+        if user_response == 'Done':
+            user_data['monitor']['state'] = 'Done'
+            user_data['monitor']['response'] = 'No'
+            user_data['monitor']['monitor_variables'] = []
+            update.message.reply_text('Are you sure you done selecting items?', \
+                reply_markup = ReplyKeyboardMarkup([['Yes'], ['No']], one_time_keyboard = True))
         
+        elif user_response == 'Exit':
+            user_data['monitor']['state'] = 'initial'
+            update.message.reply_text('Process Ended!')
+            return ConversationHnadler.END
+        
+        else:
+            user_data['monitor']['user_response'] = user_response
+            user_data['monitor']['monitor_variables'] = []
+            user_data['monitor']['state'] = 'non-initial'
+            user_data['monitor']['monitor_variables'].append(user_response)
+            update.message.reply_text("You have selected " +\
+                user_data['monitor']['user_response'] + ". Added to Monitoring List!")
+            
+            choose_options_for_monitoring(update,context)
+
+    
+    elif state == 'non-initial':
+        
+        if user_response == 'Done':
+            user_data['monitor']['state'] = 'Done'
+            user_data['monitor']['response'] = 'No' 
+            update.message.reply_text('Are you sure you done selecting items?', \
+                reply_markup = ReplyKeyboardMarkup([['Yes'], ['No']], one_time_keyboard = True))
+            return USER_RESPONSE
+           
+        elif user_response == 'Exit':
+            user_data['monitor']['state'] = 'initial'
+            update.message.reply_text('Process Ended!')
+            return ConversationHnadler.END 
+
+        elif user_response not in user_data['monitor']['monitor_variables']:
+            user_data['monitor']['user_response'] = user_response
+            user_data['monitor']['monitor_variables'].append(user_response)
+            update.message.reply_text("You have selected " + \
+                user_data['monitor']['user_response'] + ". Added to Monitoring List!")
+            
+            # Put the function for monitoring here
+            choose_options_for_monitoring(update,context)
+        else:
+            if len(set(user_data['monitor']['monitor_variables'])) == 7:
+                user_data['monitor']['state'] = 'Exit'
+                update.message.reply_text("Done Selecting monitoring values!")
+                
+            else:
+                update.message.reply_text('Already Selected choose another value!')
+                # Put monitoring function here
+                choose_options_for_monitoring(update,context)
+
+        
+    elif state == 'Exit':
+        if user_response == 'Yes':
+            user_data['monitor']['state'] = 'inital'
+        else:
+            update.message.reply_text('Exiting the process!!')
+            return ConversationHandler.END
+
+        
+    elif state == 'Done':
+        if user_response == 'Yes':
+            user_data['monitor']['state'] = 'Exit'
+            update.message.reply_text("Done Selecting monitoring values!")
+            prepare_end_message(update,context)
+        elif user_response == 'No':
+            if len(set(user_data['monitor']['monitor_variables'])) == 7:
+                update.message.reply_text("Done Selecting monitoring values!")
+                prepare_end_message(update,context)
+            else:
+                update.message.reply_text("Continue Selecting the values!")
+                choose_options_for_monitoring(update,context)
+
+        else:
+            update.message.reply_text('Invalid Response!')
+            update.message.reply_text('Are you sure you done selecting items?', \
+                reply_markup = ReplyKeyboardMarkup([['Yes'], ['No']], one_time_keyboard = True))
+
+
+
 if __name__=='__main__':
 
     updater = Updater(token=token, use_context=True)
@@ -954,7 +1083,10 @@ if __name__=='__main__':
                                            set_advance_settings),
                             ],
             IMAGE_SETTINGS : [MessageHandler(Filters.text,
+                                           set_advance_settings),
+                             MessageHandler(Filters.text,
                                            set_image_Settings),
+                                
                             ],
 
         },

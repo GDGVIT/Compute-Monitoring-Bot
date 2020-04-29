@@ -3,7 +3,7 @@ from datetime import datetime
 from io import BytesIO
 import json
 
-from ssh_into_server import ssh_into_server
+from .ssh_into_server import ssh_into_server
 
 import matplotlib.pyplot as plt
 
@@ -17,9 +17,13 @@ url = 'https://london.my-netdata.io/api/v1/data?chart=system.cpu&after=-600&poin
 url_ram = 'https://london.my-netdata.io/api/v1/data?chart=system.ram&after=-600&points=20&group=average&format=json&options=seconds&options=jsonwrapServer%20responsehttps://london.my-netdata.io/api/v1/data?chart=system.ram&after=-600&points=20&group=average&format=json&options=seconds&options=jsonwrapServer%20response'
 
 def getting_netdata_data(url=url):
-    data = json.loads(requests.get(url).text)
-    print(data)
-    return data
+    try:
+        data = json.loads(requests.get(url).text)
+        print(data)
+        return data
+    except Exception as e:
+        print(e)
+        return False
 
 def plotting_cpu_vs_time(host, username, password):
     plt.clf()
