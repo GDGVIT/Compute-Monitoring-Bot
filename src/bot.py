@@ -135,6 +135,18 @@ You can chain multiple params too.
 
 """
 
+
+def start(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text=bot_start_message)
+    context.bot.send_message(chat_id=update.effective_chat.id, text=bot_start_message_extension)
+    context.bot.send_message(chat_id=update.effective_chat.id, text=bot_start_message_second_extension)
+
+def help(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text=bot_start_message)
+    context.bot.send_message(chat_id=update.effective_chat.id, text=bot_start_message_extension)
+    context.bot.send_message(chat_id=update.effective_chat.id, text=bot_start_message_second_extension)
+
+
 CHOOSING, TYPING_REPLY, TYPING_CHOICE = range(3)
 
 reply_keyboard = [['Set Ip Address', 'Change Ip Address'],
@@ -177,6 +189,8 @@ def storing_or_modifying_ip(update, context):
     
     if check_ip(text):
         update.message.reply_text("Your Ip Address is set to {}".format(text),reply_markup=markup)
+        if ':' in text:
+            text = '['+text+']'
         user_data['ip_address'] = text
         del user_data['choice']
     else:
@@ -614,6 +628,9 @@ if __name__=='__main__':
     updater = Updater(token=token, use_context=True)
     dispatcher = updater.dispatcher
 
+    updater.dispatcher.add_handler(CommandHandler("start", start))
+    updater.dispatcher.add_handler(CommandHandler("server_status", probe_server_from_bot))
+    updater.dispatcher.add_handler(CommandHandler("help", help))
     
     updater.dispatcher.add_handler(
         ConversationHandler(
