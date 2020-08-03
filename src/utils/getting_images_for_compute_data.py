@@ -96,7 +96,7 @@ def image_for_various_parameters(param, ip_address):
         plt.title('Virtual Memory v/s Time')
         for i in data.get('data'):
             time.append(unix_to_datetime(i[0])) 
-            used_ram = [i[2]]
+            used_ram.append(i[2])
         
         buffer = BytesIO()
         plt.plot(time, used_ram)
