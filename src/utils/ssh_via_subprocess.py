@@ -36,9 +36,9 @@ async def check_valid_ssh_and_netdata(username, password, host, port=22):
         if 'version' in res:
             return {"success":res}
         else:
-            return {"error":'Netdata not installed or firewall not configured to allow port 19999'}
+            return {"error":'Netdata not installed or curl not installed, Install curl and run this on your vm to get started : bash<(curl -Ss https://my-netdata.io/kickstart.sh)'}
     except Exception:
-        return {"error": output}
+        return {"error": error.decode('utf-8')}
     else:
         return {"error": str(error.decode("utf-8") )}
 

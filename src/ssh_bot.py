@@ -157,7 +157,7 @@ def start_bot_for_monitoring(update, context):
             # Variables initialized in memory, preparing to send welcome message to user
             update.message.reply_text("No configuration errors for {}, Ready to proceed!".format(ip_address))
             update.message.reply_text("Please enter your choice based on the above instructions", \
-                reply_markup = monitor_markup)
+                reply_markup = monitor_markup, one_time_keyboard = True)
             return CHOOSING_BOT_PARAMS
         else:
             update.message.reply_text(k['error'])
@@ -215,7 +215,7 @@ def select_bot_parameter(update, context):
     else:
         print(7)
         update.message.reply_text('Invalid parameter entered, Please enter only specific parameters provided',\
-            reply_markup = monitor_markup)
+            reply_markup = monitor_markup, one_time_keyboard = True)
         return BOT_REPLY
 
 
@@ -304,8 +304,8 @@ def select_bot_actions_after_monitoring_params_selection(update, context):
     if user_response == 'Add ons':
         print(20)
         update.message.reply_text('You selected Add on')
-        update.message.reply_text('Please select something an add on',\
-                    reply_markup=ReplyKeyboardMarkup([['Add Visual Graphics'],['Schedule Monitoring'],['Exit']]), one_time_keyboard=True)
+        update.message.reply_text('Please select something to add on',\
+                    reply_markup=ReplyKeyboardMarkup([['Add Visual Graphics'],['Schedule Monitoring'],['Exit']], one_time_keyboard=True))
         return ADD_ONS
     elif user_response == 'Begin Monitoring':
         print(21)
@@ -396,15 +396,16 @@ def select_bot_response_to_add_ons(update, context):
     
     # Change this part for schedule monitoring
     if user_response == 'Schedule Monitoring':
-        schedule_monitoring = {}
-        user_data['monitor']['schedule_monitoring'] = True
-        ip_address = user_data['Ip Address']
-        update.message.reply_text("You chose to create a new scheduler for the system {}".format(ip_address),\
-            reply_markup=scheduler_markup)
-        update.message.reply_text('Please select a unique name for your scheduler. Click on the name button to set a new name, or you can still go back',\
-                    reply_markup=ReplyKeyboardMarkup([['Name of the Event'],['Go Back']]),\
-                        one_time_keyboard=True)
-        return CHOOSING_SCHEDULER_PARAMS
+        return update.message.reply_text("Coming Soon!! Make a PR if you have an idea at ")
+        # schedule_monitoring = {}
+        # user_data['monitor']['schedule_monitoring'] = True
+        # ip_address = user_data['Ip Address']
+        # update.message.reply_text("You chose to create a new scheduler for the system {}".format(ip_address),\
+        #     reply_markup=scheduler_markup)
+        # update.message.reply_text('Please select a unique name for your scheduler. Click on the name button to set a new name, or you can still go back',\
+        #             reply_markup=ReplyKeyboardMarkup([['Name of the Event'],['Go Back']]),\
+        #                 one_time_keyboard=True)
+        # return CHOOSING_SCHEDULER_PARAMS
         
     elif user_response == 'Exit':
         update.message.reply_text('You chose to exit add ons')
