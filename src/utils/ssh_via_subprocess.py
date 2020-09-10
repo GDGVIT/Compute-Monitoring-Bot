@@ -23,7 +23,7 @@ async def run_remote_commands_for_data(username, password, host, url_to_curl, po
 
 async def check_valid_ssh_and_netdata(username, password, host, port=22):
     url_to_curl = 'http://localhost:19999/api/v1/info'
-    command = "sshpass -p {}  ssh -p {}  -o StrictHostKeyChecking=no {}@{} 'curl -s {}'".format(password, port, username, host, url_to_curl)
+    command = "sshpass -p '{}'  ssh -p '{}'  -o StrictHostKeyChecking=no '{}'@'{}' 'curl -s {}'".format(password, port, username, host, url_to_curl)
     proc  = await asyncio.create_subprocess_shell(
         command,
         stdout=asyncio.subprocess.PIPE,
@@ -43,7 +43,7 @@ async def check_valid_ssh_and_netdata(username, password, host, port=22):
         return {"error": str(error.decode("utf-8") )}
 
 async def getting_info_by_command(username, password, host, command, port=22):
-    command = "sshpass -p {}  ssh -p {}  -o StrictHostKeyChecking=no {}@{} '{}'".format(password, port, username, host, command)
+    command = "sshpass -p '{}'  ssh -p '{}'  -o StrictHostKeyChecking=no '{}'@'{}' '{}'".format(password, port, username, host, command)
     proc  = await asyncio.create_subprocess_shell(
         command,
         stdout=asyncio.subprocess.PIPE,
