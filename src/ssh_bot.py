@@ -53,6 +53,7 @@ from utils.bot_helper_functions import (
 
 from telegram import ReplyKeyboardMarkup
 from telegram.ext import ConversationHandler
+import re
 
 
 def start(update, context):
@@ -99,6 +100,14 @@ def choice_for_read_or_update_details(update, context):
 
     return TYPING_REPLY
 
+def sanity_check(string):
+    return bool(re.match('^((\d{1,3}\.){3}\d{1,3})|^[0-9a-zA-Z]+[(\.)(0-9a-zA-Z)]+$', string))
+
+def sanity_check_1(string):
+    for i in [' ', '#']:
+        if i in string:
+            return False
+    return True
 
 def storing_or_modifying_details(update, context):
     """Function to store the user choice in memory"""
@@ -108,18 +117,34 @@ def storing_or_modifying_details(update, context):
     category = user_data['choice']
     
     if category == 'Username':
-        user_data['Username'] = text
-        user_data['Port'] = 22
-        update.message.reply_text("You set Username as {}".format(text), reply_markup=markup_for_ssh_setup)
+        if not sanity_check_1(text):
+            user_data['Username'] = 'something'
+            user_data['Port'] = 22
+            update.message.reply_text("You set an improper Username as {}. Please change it.".format(text), reply_markup=markup_for_ssh_setup)
+        else:
+            user_data['Username'] = text
+            user_data['Port'] = 22
+            update.message.reply_text("You set Username as {}".format(text), reply_markup=markup_for_ssh_setup)
     elif category == 'Password':
-        user_data['Password'] = text
-        update.message.reply_text("You set Password as {}".format(text), reply_markup=markup_for_ssh_setup)
+        if not sanity_check_1(text):
+            user_data['Password'] = 'something'
+            update.message.reply_text("You set an improper Password as {}. Please change it.".format(text), reply_markup=markup_for_ssh_setup)
+        else:
+            user_data['Password'] = text
+            update.message.reply_text("You set Password as {}".format(text), reply_markup=markup_for_ssh_setup)
     elif category == 'Ip Address':
-        user_data['Ip Address'] = text
-        update.message.reply_text("You set Ip Address as {}".format(text), reply_markup=markup_for_ssh_setup)
+        if not sanity_check(text):
+                user_data['Ip Address'] = 'something'
+                update.message.reply_text("You set A wrong Ip Address as {}. Please change it.".format(text), reply_markup=markup_for_ssh_setup)
+        else:
+            user_data['Ip Address'] = text
+            update.message.reply_text("You set Ip Address as {}".format(text), reply_markup=markup_for_ssh_setup)
     elif category == 'Port':
-        user_data['Port'] = text
-        update.message.reply_text("You set Port as {}".format(text), reply_markup=markup_for_ssh_setup)
+        if text.isnumeric():
+            user_data['Port'] = text
+            update.message.reply_text("You set Port as {}".format(text), reply_markup=markup_for_ssh_setup)
+        else:
+            update.message.reply_text(update.message.reply_text("You set Port as {}, which is invalid. Please change it.".format(text), reply_markup=markup_for_ssh_setup))
     del user_data['choice']
     return CHOOSING
 
@@ -396,7 +421,7 @@ def select_bot_response_to_add_ons(update, context):
     
     # Change this part for schedule monitoring
     if user_response == 'Schedule Monitoring':
-        return update.message.reply_text("Coming Soon!! Make a PR if you have an idea at ")
+        return update.message.reply_text("Coming Soon!! Make a PR if you have an idea at this!! ")
         # schedule_monitoring = {}
         # user_data['monitor']['schedule_monitoring'] = True
         # ip_address = user_data['Ip Address']
