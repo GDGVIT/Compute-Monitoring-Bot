@@ -104,7 +104,7 @@ def sanity_check(string):
     return bool(re.match('^((\d{1,3}\.){3}\d{1,3})|^[0-9a-zA-Z]+[(\.)(0-9a-zA-Z)]+$', string))
 
 def sanity_check_1(string):
-    for i in [' ', '#']:
+    for i in [' ', "'", '"']:
         if i in string:
             return False
     return True
@@ -113,40 +113,54 @@ def storing_or_modifying_details(update, context):
     """Function to store the user choice in memory"""
 
     user_data = context.user_data
-    text = update.message.text
+    text = (update.message.text).strip(' ')
     category = user_data['choice']
     
     if category == 'Username':
         if not sanity_check_1(text):
             user_data['Username'] = 'something'
             user_data['Port'] = 22
-            update.message.reply_text("You set an improper Username as {}. Please change it.".format(text), reply_markup=markup_for_ssh_setup)
+            update.message.reply_text("You set an improper Username. Please change it.", reply_markup=markup_for_ssh_setup)
+            del user_data['choice']
+            return CHOOSING
         else:
             user_data['Username'] = text
             user_data['Port'] = 22
             update.message.reply_text("You set Username as {}".format(text), reply_markup=markup_for_ssh_setup)
+            del user_data['choice']
+            return CHOOSING
     elif category == 'Password':
         if not sanity_check_1(text):
             user_data['Password'] = 'something'
-            update.message.reply_text("You set an improper Password as {}. Please change it.".format(text), reply_markup=markup_for_ssh_setup)
+            update.message.reply_text("You set an improper Password. Please change it.", reply_markup=markup_for_ssh_setup)
+            del user_data['choice']
+            return CHOOSING
         else:
             user_data['Password'] = text
             update.message.reply_text("You set Password as {}".format(text), reply_markup=markup_for_ssh_setup)
+            del user_data['choice']
+            return CHOOSING 
     elif category == 'Ip Address':
         if not sanity_check(text):
                 user_data['Ip Address'] = 'something'
-                update.message.reply_text("You set A wrong Ip Address as {}. Please change it.".format(text), reply_markup=markup_for_ssh_setup)
+                update.message.reply_text("You set a wrong Ip Address as {}. Please change it.", reply_markup=markup_for_ssh_setup)
+                del user_data['choice']
+                return CHOOSING 
         else:
             user_data['Ip Address'] = text
             update.message.reply_text("You set Ip Address as {}".format(text), reply_markup=markup_for_ssh_setup)
+            del user_data['choice']
+            return CHOOSING
     elif category == 'Port':
         if text.isnumeric():
             user_data['Port'] = text
             update.message.reply_text("You set Port as {}".format(text), reply_markup=markup_for_ssh_setup)
+            del user_data['choice']
+            return CHOOSING
         else:
-            update.message.reply_text(update.message.reply_text("You set Port as {}, which is invalid. Please change it.".format(text), reply_markup=markup_for_ssh_setup))
-    del user_data['choice']
-    return CHOOSING
+            update.message.reply_text(update.message.reply_text("You set Port which is invalid. Please change it.", reply_markup=markup_for_ssh_setup))
+            del user_data['choice']
+            return CHOOSING
 
 def cancel_ip_convo(update, context):
     update.message.reply_text("Some unexpected error occured, restart the bot!")
@@ -185,7 +199,8 @@ def start_bot_for_monitoring(update, context):
                 reply_markup = monitor_markup, one_time_keyboard = True)
             return CHOOSING_BOT_PARAMS
         else:
-            update.message.reply_text(k['error'])
+            print(k['error'])
+            update.message.reply_text("Some unknown error occured, please check your details as well as if your server is up or not!")
             return ConversationHandler.END
 
 
