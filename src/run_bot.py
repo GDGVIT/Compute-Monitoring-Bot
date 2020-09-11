@@ -16,6 +16,7 @@ logger = logging.getLogger()
 
 mode = os.getenv("mode")
 token = os.getenv("token")
+webhook = os.getenv("webhook_token")
 
 if mode == "dev":
     def run(updater):
@@ -27,7 +28,7 @@ elif mode == "prod":
         updater.start_webhook(listen="0.0.0.0",
                               port=PORT,
                               url_path=token)
-        updater.bot.set_webhook("https://{}.herokuapp.com/{}".format(HEROKU_APP_NAME, token))
+        updater.bot.set_webhook("https://{}.herokuapp.com/{}".format(HEROKU_APP_NAME, webhook))
 else:
     logger.error("No mode specified!")
     sys.exit(1)
