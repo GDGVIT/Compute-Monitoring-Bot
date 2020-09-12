@@ -1,12 +1,16 @@
 import subprocess
 import json
 import asyncio
+from shlex import join
 
 
 async def run_remote_commands_for_data(username, password, host, url_to_curl, port=22):
-    command = "sshpass -p '{}'  ssh -p '{}'  -o StrictHostKeyChecking=no '{}'@'{}' 'curl -s {}'".format(password, port, username, host, url_to_curl)
+    #command = "sshpass -p '{}'  ssh -p '{}'  -o StrictHostKeyChecking=no '{}'@'{}' 'curl -s {}'".format(password, port, username, host, url_to_curl)
+    string = username + '@' + host
+    command_1 = 'curl -s ' + url_to_curl
+    command = ["sshpass", "-p", password, "ssh", "-p", port, "-o", "StrictHostKeyChecking=no", string, command_1]
     proc  = await asyncio.create_subprocess_shell(
-        command,
+        join(command),
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
         shell=True
@@ -15,17 +19,23 @@ async def run_remote_commands_for_data(username, password, host, url_to_curl, po
     try:
         res = json.loads(output)
         return {"success":res}
-    except Exception:
-        return {"error": output}
+    except Exception as e:
+        print("This is error while parsing the output!")
+        print(host," ",e)
+        return {"error": "We have some error in running some commands into your server, please check your creds once, or try checking netdata installation!"}
     else:
-        return {"error": str(error.decode("utf-8") )}
-
+        print("This is error while executing!")
+        print(host, " " ,error)
+        return {"error": "Unable to execute this operation!"}
 
 async def check_valid_ssh_and_netdata(username, password, host, port=22):
     url_to_curl = 'http://localhost:19999/api/v1/info'
-    command = "sshpass -p '{}'  ssh -p '{}'  -o StrictHostKeyChecking=no '{}'@'{}' 'curl -s {}'".format(password, port, username, host, url_to_curl)
+    #command = "sshpass -p '{}'  ssh -p '{}'  -o StrictHostKeyChecking=no '{}'@'{}' 'curl -s {}'".format(password, port, username, host, url_to_curl)
+    string = username + '@' + host
+    command_1 = 'curl -s ' + url_to_curl
+    command = ["sshpass", "-p", password, "ssh", "-p", port, "-o", "StrictHostKeyChecking=no", string, command_1]
     proc  = await asyncio.create_subprocess_shell(
-        command,
+        join(command),
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
         shell=True
@@ -37,15 +47,21 @@ async def check_valid_ssh_and_netdata(username, password, host, port=22):
             return {"success":res}
         else:
             return {"error":'Netdata not installed or curl not installed, Install curl and run this on your vm to get started : bash<(curl -Ss https://my-netdata.io/kickstart.sh)'}
-    except Exception:
-        return {"error": error.decode('utf-8')}
+    except Exception as e:
+        print(host, " ", e)
+        return {"error": "Unable to validate server, please check creds and try again!"}
     else:
-        return {"error": str(error.decode("utf-8") )}
+        print(host, " ", error)
+        return {"error": "Unhandled error!"}
 
 async def getting_info_by_command(username, password, host, command, port=22):
-    command = "sshpass -p '{}'  ssh -p '{}'  -o StrictHostKeyChecking=no '{}'@'{}' '{}'".format(password, port, username, host, command)
+    #command = "sshpass -p '{}'  ssh -p '{}'  -o StrictHostKeyChecking=no '{}'@'{}' '{}'".format(password, port, username, host, command)
+    
+    string = username + '@' + host
+    command = ["sshpass", "-p", password, "ssh", "-p", port, "-o", "StrictHostKeyChecking=no", string, command]
+    
     proc  = await asyncio.create_subprocess_shell(
-        command,
+        join(command),
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
         shell=True
@@ -55,8 +71,11 @@ async def getting_info_by_command(username, password, host, command, port=22):
         if output:
             return {'success': output.decode("utf-8") }
         else:
-            return {'error': error.decode("utf-8") }
-    except Exception:
-        return {"error": output.decode("utf-8") }
+            print(host, " ", error)
+            return {'error':  "Error retrieving info!"}
+    except Exception as e:
+        print(host, " ", e)
+        return {"error": "Unandled exception!" }
     else:
-        return {"error": str(error.decode("utf-8"))}
+        print(host, " ", error)
+        return {"error": "Unable to complete your request! Please try again"}
