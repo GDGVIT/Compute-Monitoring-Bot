@@ -7,8 +7,8 @@ from shlex import join
 async def run_remote_commands_for_data(username, password, host, url_to_curl, port=22):
     #command = "sshpass -p '{}'  ssh -p '{}'  -o StrictHostKeyChecking=no '{}'@'{}' 'curl -s {}'".format(password, port, username, host, url_to_curl)
     string = username + '@' + host
-    command_1 = 'curl -s ' + url_to_curl
-    command = ["sshpass", "-p", password, "ssh", "-p", port, "-o", "StrictHostKeyChecking=no", string, command_1]
+    #command_1 = 'curl -s ' + url_to_curl
+    command = ["sshpass", "-p", password, "ssh", "-p", port, "-o", "StrictHostKeyChecking=no", string, 'curl', '-s', url_to_curl]
     proc  = await asyncio.create_subprocess_shell(
         join(command),
         stdout=asyncio.subprocess.PIPE,
@@ -32,8 +32,8 @@ async def check_valid_ssh_and_netdata(username, password, host, port=22):
     url_to_curl = 'http://localhost:19999/api/v1/info'
     #command = "sshpass -p '{}'  ssh -p '{}'  -o StrictHostKeyChecking=no '{}'@'{}' 'curl -s {}'".format(password, port, username, host, url_to_curl)
     string = username + '@' + host
-    command_1 = 'curl -s ' + url_to_curl
-    command = ["sshpass", "-p", password, "ssh", "-p", port, "-o", "StrictHostKeyChecking=no", string, command_1]
+    #command_1 = 'curl -s ' + url_to_curl
+    command = ["sshpass", "-p", password, "ssh", "-p", port, "-o", "StrictHostKeyChecking=no", string, 'curl', '-s', url_to_curl]
     proc  = await asyncio.create_subprocess_shell(
         join(command),
         stdout=asyncio.subprocess.PIPE,
