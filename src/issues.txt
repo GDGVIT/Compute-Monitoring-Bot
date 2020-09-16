@@ -1,0 +1,9 @@
+1) update.message.reply_text(k['error']) line 163 Wrong Creds dealing
+2) Keyboard To be removed after monitoring
+3) Add description via BotFather
+4) Add command Docs
+5) New Commnad for current Creds
+6) Cron
+
+### Schedule to be released
+## Try to make checklist instead of Options
