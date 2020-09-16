@@ -16,7 +16,6 @@ logger = logging.getLogger()
 
 mode = os.getenv("mode")
 token = os.getenv("token")
-webhook = os.getenv("webhook_token")
 
 if mode == "dev":
     def run(updater):
