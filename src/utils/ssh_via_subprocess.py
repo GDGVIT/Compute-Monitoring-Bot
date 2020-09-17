@@ -2,7 +2,6 @@ import subprocess
 import json
 import asyncio
 
-
 async def run_remote_commands_for_data(username, password, host, url_to_curl, port=22):
     command = "sshpass -p {}  ssh -p {}  -o StrictHostKeyChecking=no {}@{} 'curl -s {}'".format(password, port, username, host, url_to_curl)
     proc  = await asyncio.create_subprocess_shell(

@@ -96,7 +96,7 @@ def choice_for_read_or_update_details(update, context):
         return ConversationHandler.END
     
     update.message.reply_text(
-        'You chose to {}. Please do the same properly'.format(text))
+        'You chose to set {}. Please do the same properly'.format(text))
 
     return TYPING_REPLY
 
